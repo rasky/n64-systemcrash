@@ -45,6 +45,11 @@ uint64_t rand_cached_vaddr(enum MemArea area) {
 
 uint64_t read_64bit(uint64_t vaddr)
 {
+    // Perform a 64-bit read from the given 64-bit virtual address.
+    // In the general case (that is, when the 64-bit vaddr isn't
+    // a sign-extended 32-bit vaddr), we cannot do this in C, casting
+    // to a uint64_t* pointer, because the libdragon toolchain uses 32-bit
+    // pointers. So we need to use inline assembly to perform the read.
     uint64_t value;
     asm volatile (
         "ld %[value], 0(%[vaddr])  \n" :

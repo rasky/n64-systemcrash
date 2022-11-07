@@ -70,6 +70,7 @@ crasher_t crashers[] = {
 
     { crash_rdp_loadtile_4bpp, "RDP: LOAD_TILE 4bpp", "Loading a 4bpp texture via LOAD_TILE will crash the RDP" },
     { crash_rdp_fill_4bpp, "RDP: FILL on 4bpp", "FILL mode is not supported on a 4bpp framebuffer" },
+    { crash_rdp_copy_32bpp, "RDP: COPY on 32bpp", "COPY mode is not supported on a 32bpp framebuffer" },
 };
 
 #define NUM_CRASHERS (sizeof(crashers) / sizeof(crashers[0]))
