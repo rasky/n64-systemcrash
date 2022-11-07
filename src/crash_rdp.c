@@ -42,7 +42,12 @@ void crash_rdp_packets(const char *fn)
     free_uncached(buf);
 }
 
-void crash_rdp_loadtile4bpp(void)
+void crash_rdp_loadtile_4bpp(void)
 {
-    crash_rdp_packets("rom:/loadtile4bpp.rdp");
+    crash_rdp_packets("rom:/loadtile_4bpp.rdp");
+}
+
+void crash_rdp_fill_4bpp(void)
+{
+    crash_rdp_packets("rom:/fill_4bpp.rdp");
 }

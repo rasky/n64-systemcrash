@@ -17,6 +17,32 @@ enum {
     PAGE_ERROR_RESET,
 };
 
+struct {
+    uint32_t id;
+    uint32_t curtest;
+    uint32_t rand_state;
+    struct {
+        bool passed;
+    } tests[256];
+} State alignas(8);
+
+static uint32_t randx(void) {
+	uint32_t x = State.rand_state;
+	x ^= x << 13;
+	x ^= x >> 7;
+	x ^= x << 5;
+	return State.rand_state = x;
+}
+
+#define SRAND(n) ({ State.rand_state = (n); if (!State.rand_state) State.rand_state = 1; })
+
+// RANDN(n): generate a random number from 0 to n-1
+#define RANDN(n) ({ \
+	__builtin_constant_p((n)) ? \
+		(randx()%(n)) : \
+		(uint32_t)(((uint64_t)randx() * (n)) >> 32); \
+})
+
 #include "crash_memory.c"
 #include "crash_rdp.c"
 
@@ -26,22 +52,27 @@ typedef struct {
 } crasher_t;
 
 crasher_t crashers[] = {
-    { crash_ld_rcp, "LD RCP",    "Doing a 64-bit from RCP area will crash the CPU" },
-    { crash_ld_pi1, "LD PI #1",  "Doing a 64-bit from PI area will crash the CPU"  },
-    { crash_ld_pi2, "LD PI #2",  "Doing a 64-bit from PI area will crash the CPU"  },
+    { crash_rcp_cached,      "Cached read RCP",      "Doing a cached read from RCP MMIO area" },
+    { crash_pi1_cached,      "Cached read PI #1",    "Doing a cached read from PI area #1" },
+    { crash_pi2_cached,      "Cached read PI #2",    "Doing a cached read from PI area #2" },
+    { crash_si_cached,       "Cached read PI #2",    "Doing a cached read from SI area" },
+    { crash_pi3_cached,      "Cached read PI #2",    "Doing a cached read from PI area #3" },
+    { crash_pi4_cached,      "Cached read PI #2",    "Doing a cached read from PI area #4" },
+    { crash_unmapped_cached, "Cached read PI #2",    "Doing a cached read from unmapped area" },
 
-    { crash_rdp_loadtile4bpp, "RDP: LOAD_TILE 4bpp", "Loading a 4bpp texture via LOAD_TILE will crash the RDP" },
+    { crash_ld_rcp,      "LD RCP",       "Doing a 64-bit from RCP area" },
+    { crash_ld_pi1,      "LD PI #1",     "Doing a 64-bit from PI area #1"  },
+    { crash_ld_pi2,      "LD PI #2",     "Doing a 64-bit from PI area #2"  },
+    { crash_ld_si,       "LD PI #2",     "Doing a 64-bit from SI area"  },
+    { crash_ld_pi3,      "LD PI #3",     "Doing a 64-bit from PI area #3"  },
+    { crash_ld_pi4,      "LD PI #4",     "Doing a 64-bit from PI area #4"  },
+    { crash_ld_unmapped, "LD Unmapped",  "Doing a 64-bit from unmapped area"  },
+
+    { crash_rdp_loadtile_4bpp, "RDP: LOAD_TILE 4bpp", "Loading a 4bpp texture via LOAD_TILE will crash the RDP" },
+    { crash_rdp_fill_4bpp, "RDP: FILL on 4bpp", "FILL mode is not supported on a 4bpp framebuffer" },
 };
 
 #define NUM_CRASHERS (sizeof(crashers) / sizeof(crashers[0]))
-
-struct {
-    uint32_t id;
-    uint32_t curtest;
-    struct {
-        bool passed;
-    } tests[256];
-} State alignas(8);
 
 void reset_state(void)
 {
@@ -83,6 +114,7 @@ bool run_next_crasher(void)
     // the test passed.
     State.tests[State.curtest].passed = true;
     State.curtest++;
+    randx(); // Advance the random state
     save_state();
 
     debugf("Running crasher #%ld: %s\n", State.curtest-1, c->name);
@@ -138,7 +170,11 @@ int page_intro(void)
 
     struct controller_data cont = get_keys_down();
     if (cont.c[0].start)
+    {
+        SRAND(TICKS_READ());
+        debugf("Starting testsuite (random seed: %08lx)\n", State.rand_state);
         return PAGE_TEST;
+    }
     return PAGE_INTRO;
 }
 
@@ -238,10 +274,10 @@ int main(void)
     rdpq_debug_start();
     rdpq_debug_log(true);
 
-    surface_t surf = surface_alloc(FMT_I4, 32, 32);
-    rdpq_set_texture_image(&surf);
-    rdpq_set_tile(TILE0, FMT_I4, 0, 128, 0);
-    //rdpq_load_tile(TILE0, 0, 0, 32, 32);
+    surface_t surf = surface_alloc(FMT_RGBA32, 32, 32);
+    rdpq_set_color_image(&surf);
+    rdpq_set_mode_copy(false);
+    rdpq_texture_rectangle(TILE0, 0, 0, surf.width, surf.height, 0, 0, 1, 1);
     rspq_wait();
 #endif
 
