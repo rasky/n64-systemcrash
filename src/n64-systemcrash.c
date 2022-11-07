@@ -208,17 +208,22 @@ int page_test(void)
 int page_results()
 {
     static bool first_run = true;
-    static int passed = 0;
+    static int passed = 0, failed = 0;
+    static int failures[256] = {0};
 
     if (first_run) {
         for (int i=0; i<NUM_CRASHERS; i++) {
             if (State.tests[i].passed)
                 passed++;
+            else {
+                failures[failed++] = i;
+            }
         }
-    }
 
-    reset_state();
-    save_state();
+        // Reset SRAM so that we start from scratch on next run
+        reset_state();
+        save_state();
+    }
 
     display_context_t disp;
     while (!(disp = display_lock())) {}
@@ -230,6 +235,23 @@ int page_results()
     sprintf(sbuf, "Tests: %d, Passed: %d. Success rate: %d%%", NUM_CRASHERS, passed, (passed * 100) / NUM_CRASHERS);
     if (first_run) debugf("%s\n", sbuf);
     graphics_draw_text(disp, 40, 80, sbuf);
+
+    if (failed > 0) {
+        graphics_draw_text(disp, 40, 100, "FAILURES:");
+        int y = 110;
+        int x = 40;
+        for (int i=0; i<failed; i++) {
+            sprintf(sbuf, "[%d] %s. ", failures[i], crashers[failures[i]].name);
+            int len = strlen(sbuf);
+            if (x + len*8 > 640) {
+                x = 40;
+                y += 10;
+                if (y > 240) break;
+            }
+            graphics_draw_text(disp, x, y, sbuf);
+            x += len*8;
+        }
+    }
 
     display_show(disp);
 
@@ -275,6 +297,7 @@ int main(void)
     rdpq_debug_start();
     rdpq_debug_log(true);
 
+    rdpq_set_tile(TILE0, FMT_RGBA16, 0, 32, 0);
     surface_t surf = surface_alloc(FMT_RGBA32, 32, 32);
     rdpq_set_color_image(&surf);
     rdpq_set_mode_copy(false);
