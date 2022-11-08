@@ -45,3 +45,7 @@ void crash_rdp_packets(const char *fn)
 void crash_rdp_loadtile_4bpp(void) { crash_rdp_packets("rom:/loadtile_4bpp.rdp"); }
 void crash_rdp_fill_4bpp(void)     { crash_rdp_packets("rom:/fill_4bpp.rdp"); }
 void crash_rdp_copy_32bpp(void)    { crash_rdp_packets("rom:/copy_32bpp.rdp"); }
+void crash_rdp_fill_readen(void)   { crash_rdp_packets("rom:/fill_readen.rdp"); }
+void crash_rdp_fill_zcmp(void)     { crash_rdp_packets("rom:/fill_zcmp.rdp"); }
+void crash_rdp_fill_zupd(void)     { crash_rdp_packets("rom:/fill_zupd.rdp"); }
+void crash_rdp_fill_zprim(void)    { crash_rdp_packets("rom:/fill_zprim.rdp"); }

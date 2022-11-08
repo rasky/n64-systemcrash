@@ -71,6 +71,12 @@ crasher_t crashers[] = {
     { crash_rdp_loadtile_4bpp, "RDP: LOAD_TILE 4bpp", "Loading a 4bpp texture via LOAD_TILE will crash the RDP" },
     { crash_rdp_fill_4bpp, "RDP: FILL on 4bpp", "FILL mode is not supported on a 4bpp framebuffer" },
     { crash_rdp_copy_32bpp, "RDP: COPY on 32bpp", "COPY mode is not supported on a 32bpp framebuffer" },
+    { crash_rdp_fill_readen, "RDP: FILL with READEN", "FILL mode does not support readbacks from framebuffer" },
+    { crash_rdp_fill_zcmp, "RDP: FILL with ZCMP", "FILL mode does not support Z compares" },
+    { crash_rdp_fill_zupd, "RDP: FILL with ZUPD", "FILL mode does not support Z updates" },
+    // This test is disabled; although Angrylion emulates this, I cannot reproduce it on real hardware.
+    // I might be missing something...
+    //{ crash_rdp_fill_zprim, "RDP: FILL with ZPRIM", "FILL mode does not support Z primitive" },
 };
 
 #define NUM_CRASHERS (sizeof(crashers) / sizeof(crashers[0]))
@@ -298,11 +304,18 @@ int main(void)
     rdpq_debug_log(true);
 
     rdpq_set_tile(TILE0, FMT_RGBA16, 0, 32, 0);
+    surface_t zbuf = surface_alloc(FMT_RGBA16, 32, 32);
     surface_t surf = surface_alloc(FMT_RGBA32, 32, 32);
     rdpq_set_color_image(&surf);
-    rdpq_set_mode_copy(false);
-    rdpq_texture_rectangle(TILE0, 0, 0, surf.width, surf.height, 0, 0, 1, 1);
+    rdpq_set_z_image(&zbuf);
+    rdpq_set_mode_fill(RGBA32(0,0,0,0));
+    rdpq_set_prim_depth_raw(0xAB, 0);
+    rdpq_set_other_modes_raw(SOM_CYCLE_FILL | SOM_Z_WRITE | SOM_ZSOURCE_PRIM);
     rspq_wait();
+    rdpq_fill_rectangle(0, 0, surf.width, surf.height);
+    rspq_wait();
+    rspq_wait();
+    debug_hexdump(zbuf.buffer, zbuf.width * zbuf.height * 2);
 #endif
 
     dfs_init(DFS_DEFAULT_LOCATION);
