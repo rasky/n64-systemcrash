@@ -1,6 +1,8 @@
 
 enum MemArea {
     MEMAREA_RCP,
+    MEMAREA_RSPMIRROR,
+    MEMAREA_RCPEND,
     MEMAREA_PI1,
     MEMAREA_PI2,
     MEMAREA_SI,
@@ -14,6 +16,8 @@ enum MemArea {
 uint32_t rand_phys_address(enum MemArea area) {
     switch (area) {
     case MEMAREA_RCP:      return RAND_INTERVAL(0x04000000, 0x04FFFFFF) & ~7;
+    case MEMAREA_RSPMIRROR:return RAND_INTERVAL(0x040C0000, 0x040FFFFF) & ~7;
+    case MEMAREA_RCPEND:   return RAND_INTERVAL(0x04900000, 0x04FFFFFF) & ~7;
     case MEMAREA_PI1:      return RAND_INTERVAL(0x05000000, 0x0FFFFFFF) & ~7;
     case MEMAREA_PI2:      return RAND_INTERVAL(0x10000000, 0x1FBFFFFF) & ~7;
     case MEMAREA_SI:       return RAND_INTERVAL(0x1FC00000, 0x1FCFFFFF) & ~7;
@@ -50,6 +54,7 @@ uint64_t read_64bit(uint64_t vaddr)
     // a sign-extended 32-bit vaddr), we cannot do this in C, casting
     // to a uint64_t* pointer, because the libdragon toolchain uses 32-bit
     // pointers. So we need to use inline assembly to perform the read.
+    debugf("64-bit read from %016llx\n", vaddr);
     uint64_t value;
     asm volatile (
         "ld %[value], 0(%[vaddr])  \n" :
@@ -59,13 +64,37 @@ uint64_t read_64bit(uint64_t vaddr)
     return value;
 }
 
+uint32_t read_32bit(uint64_t vaddr)
+{
+    uint32_t value;
+    debugf("32-bit read from %016llx\n", vaddr);
+    asm volatile ( "lw %[value], 0(%[vaddr])  \n" : [value] "=r" (value): [vaddr] "r" (vaddr) );
+    return value;
+}
+
+uint16_t read_16bit(uint64_t vaddr)
+{
+    uint16_t value;
+    debugf("16-bit read from %016llx\n", vaddr);
+    asm volatile ( "lhu %[value], 0(%[vaddr])  \n" : [value] "=r" (value): [vaddr] "r" (vaddr) );
+    return value;
+}
+
+uint8_t read_8bit(uint64_t vaddr)
+{
+    uint8_t value;
+    debugf("8-bit read from %016llx\n", vaddr);
+    asm volatile ( "lbu %[value], 0(%[vaddr])  \n" : [value] "=r" (value): [vaddr] "r" (vaddr) );
+    return value;
+}
+
+
 void crash_ld_rcp(void)      { (void)read_64bit(rand_uncached_vaddr(MEMAREA_RCP)); }
 void crash_ld_pi1(void)      { (void)read_64bit(rand_uncached_vaddr(MEMAREA_PI1)); }
 void crash_ld_pi2(void)      { (void)read_64bit(rand_uncached_vaddr(MEMAREA_PI2)); }
 void crash_ld_si(void)       { (void)read_64bit(rand_uncached_vaddr(MEMAREA_SI)); }
 void crash_ld_pi3(void)      { (void)read_64bit(rand_uncached_vaddr(MEMAREA_PI3)); }
 void crash_ld_pi4(void)      { (void)read_64bit(rand_uncached_vaddr(MEMAREA_PI4)); }
-void crash_ld_unmapped(void) { (void)read_64bit(rand_uncached_vaddr(MEMAREA_UNMAPPED)); }
 
 void crash_rcp_cached(void)      { (void)read_64bit(rand_cached_vaddr(MEMAREA_RCP)); }
 void crash_pi1_cached(void)      { (void)read_64bit(rand_cached_vaddr(MEMAREA_PI1)); }
@@ -74,3 +103,16 @@ void crash_si_cached(void)       { (void)read_64bit(rand_cached_vaddr(MEMAREA_SI
 void crash_pi3_cached(void)      { (void)read_64bit(rand_cached_vaddr(MEMAREA_PI3)); }
 void crash_pi4_cached(void)      { (void)read_64bit(rand_cached_vaddr(MEMAREA_PI4)); }
 void crash_unmapped_cached(void) { (void)read_64bit(rand_cached_vaddr(MEMAREA_UNMAPPED)); }
+
+void crash_ld_unmapped(void)     { (void)read_64bit(rand_uncached_vaddr(MEMAREA_UNMAPPED)); }
+void crash_lw_unmapped(void)     { (void)read_32bit(rand_uncached_vaddr(MEMAREA_UNMAPPED)); }
+void crash_lh_unmapped(void)     { (void)read_16bit(rand_uncached_vaddr(MEMAREA_UNMAPPED)); }
+void crash_lb_unmapped(void)     { (void)read_8bit(rand_uncached_vaddr(MEMAREA_UNMAPPED)); }
+
+void crash_lw_rspmirror(void)    { (void)read_32bit(rand_uncached_vaddr(MEMAREA_RSPMIRROR)); }
+void crash_lh_rspmirror(void)    { (void)read_16bit(rand_uncached_vaddr(MEMAREA_RSPMIRROR)); }
+void crash_lb_rspmirror(void)    { (void)read_8bit(rand_uncached_vaddr(MEMAREA_RSPMIRROR)); }
+
+void crash_lw_rcpend(void)    { (void)read_32bit(rand_uncached_vaddr(MEMAREA_RCPEND)); }
+void crash_lh_rcpend(void)    { (void)read_16bit(rand_uncached_vaddr(MEMAREA_RCPEND)); }
+void crash_lb_rcpend(void)    { (void)read_8bit(rand_uncached_vaddr(MEMAREA_RCPEND)); }

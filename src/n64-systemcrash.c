@@ -66,7 +66,19 @@ crasher_t crashers[] = {
     { crash_ld_si,       "LD PI #2",     "Doing a 64-bit from SI area"  },
     { crash_ld_pi3,      "LD PI #3",     "Doing a 64-bit from PI area #3"  },
     { crash_ld_pi4,      "LD PI #4",     "Doing a 64-bit from PI area #4"  },
+
     { crash_ld_unmapped, "LD Unmapped",  "Doing a 64-bit from unmapped area"  },
+    { crash_lw_unmapped, "LW Unmapped",  "Doing a 32-bit from unmapped area"  },
+    { crash_lh_unmapped, "LH Unmapped",  "Doing a 16-bit from unmapped area"  },
+    { crash_lb_unmapped, "LB Unmapped",  "Doing a 8-bit from unmapped area"  },
+
+    { crash_lw_rspmirror,"LW RSP Mirror","Doing a 32-bit read from RSP mirror area" },
+    { crash_lh_rspmirror,"LH RSP Mirror","Doing a 16-bit read from RSP mirror area" },
+    { crash_lb_rspmirror,"LB RSP Mirror","Doing a 8-bit read from RSP mirror area" },
+
+    { crash_lw_rcpend,"LW RCP End","Doing a 32-bit read from RCP final area" },
+    { crash_lh_rcpend,"LH RCP End","Doing a 16-bit read from RCP final area" },
+    { crash_lb_rcpend,"LB RCP End","Doing a 8-bit read from RCP final area" },
 
     { crash_rdp_loadtile_4bpp, "RDP: LOAD_TILE 4bpp", "Loading a 4bpp texture via LOAD_TILE will crash the RDP" },
     { crash_rdp_fill_4bpp, "RDP: FILL on 4bpp", "FILL mode is not supported on a 4bpp framebuffer" },
